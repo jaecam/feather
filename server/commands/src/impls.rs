@@ -32,7 +32,7 @@ pub enum TpError {
 }
 
 #[command(usage = "tp|teleport <destination>")]
-pub fn tp_1(ctx: &mut CommandCtx, destination: EntitySelector) -> anyhow::Result<()> {
+pub fn tp_1(ctx: &mut CommandCtx, destination: EntitySelector) -> anyhow::Result<Option<String>> {
     if let Some(first) = destination.entities.first() {
         if let Some(pos) = ctx.world.try_get::<Position>(*first).map(|r| *r) {
             teleport_entity_to_pos(&mut ctx.world, ctx.sender, pos);
@@ -49,7 +49,7 @@ pub fn tp_1(ctx: &mut CommandCtx, destination: EntitySelector) -> anyhow::Result
 }
 
 #[command(usage = "tp|teleport <location>")]
-pub fn tp_2(ctx: &mut CommandCtx, location: Coordinates) -> anyhow::Result<()> {
+pub fn tp_2(ctx: &mut CommandCtx, location: Coordinates) -> anyhow::Result<Option<String>> {
     teleport_entity(&mut ctx.world, ctx.sender, location);
 
     let position = ctx.world.get::<Position>(ctx.sender);
@@ -67,7 +67,7 @@ pub fn tp_3(
     ctx: &mut CommandCtx,
     targets: EntitySelector,
     location: Coordinates,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<String>> {
     if targets.entities.is_empty() {
         Err(TpError::NoMatchingEntities.into())
     } else {
@@ -93,7 +93,7 @@ pub fn tp_4(
     ctx: &mut CommandCtx,
     targets: EntitySelector,
     destination: EntitySelector,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<String>> {
     if destination.entities.len() > 1 {
         Err(TpError::TooManyEntities.into())
     } else if let Some(location) = destination
@@ -138,7 +138,10 @@ fn teleport_entity_to_pos(world: &mut World, entity: Entity, pos: Position) {
 }
 
 #[command(usage = "gamemode <gamemode>")]
-pub fn gamemode_1(ctx: &mut CommandCtx, gamemode: ParsedGamemode) -> anyhow::Result<()> {
+pub fn gamemode_1(
+    ctx: &mut CommandCtx,
+    gamemode: ParsedGamemode,
+) -> anyhow::Result<Option<String>> {
     update_gamemode(ctx, gamemode.0, ctx.sender);
     Ok(Some(format!(
         "Set own gamemode to {} Mode",
@@ -151,7 +154,7 @@ pub fn gamemode_2(
     ctx: &mut CommandCtx,
     gamemode: ParsedGamemode,
     target: EntitySelector,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<String>> {
     for entity in &target.entities {
         update_gamemode(ctx, gamemode.0, *entity)
     }
@@ -194,7 +197,7 @@ pub fn whisper(
     ctx: &mut CommandCtx,
     target: EntitySelector,
     message: TextArgument,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<String>> {
     let sender_name = if let Some(sender_name) = ctx.world.try_get::<Name>(ctx.sender) {
         sender_name.0.clone()
     } else {
@@ -249,7 +252,7 @@ pub fn whisper(
 }
 
 #[command(usage = "say <message>")]
-pub fn say(ctx: &mut CommandCtx, message: TextArgument) -> anyhow::Result<()> {
+pub fn say(ctx: &mut CommandCtx, message: TextArgument) -> anyhow::Result<Option<String>> {
     let name = ctx.world.try_get::<Name>(ctx.sender);
 
     let sender_name = if let Some(name) = &name {
@@ -274,7 +277,7 @@ pub fn say(ctx: &mut CommandCtx, message: TextArgument) -> anyhow::Result<()> {
 }
 
 #[command(usage = "me <action>")]
-pub fn me(ctx: &mut CommandCtx, action: TextArgument) -> anyhow::Result<()> {
+pub fn me(ctx: &mut CommandCtx, action: TextArgument) -> anyhow::Result<Option<String>> {
     let command_output = {
         let name = ctx.world.try_get::<Name>(ctx.sender);
         let sender_name = name.as_deref().map_or("@", |Name(n)| n);
@@ -301,7 +304,7 @@ pub enum KickError {
 }
 
 #[command(usage = "kick <targets>")]
-pub fn kick_1(ctx: &mut CommandCtx, targets: EntitySelector) -> anyhow::Result<()> {
+pub fn kick_1(ctx: &mut CommandCtx, targets: EntitySelector) -> anyhow::Result<Option<String>> {
     kick_players(
         ctx,
         &targets,
@@ -314,7 +317,7 @@ pub fn kick_2(
     ctx: &mut CommandCtx,
     targets: EntitySelector,
     reason: TextArgument,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<String>> {
     kick_players(ctx, &targets, reason.0.into())
 }
 
@@ -350,7 +353,7 @@ fn kick_players(
 }
 
 #[command(usage = "stop")]
-pub fn stop(ctx: &mut CommandCtx) -> anyhow::Result<()> {
+pub fn stop(ctx: &mut CommandCtx) -> anyhow::Result<Option<String>> {
     // Confirmation message
     // TODO Server ops should also see the message
     if let Some(mut sender_message_receiver) = ctx.world.try_get_mut::<MessageReceiver>(ctx.sender)
@@ -383,7 +386,7 @@ pub enum ClearError {
 }
 
 #[command(usage = "clear")]
-pub fn clear_1(ctx: &mut CommandCtx) -> anyhow::Result<()> {
+pub fn clear_1(ctx: &mut CommandCtx) -> anyhow::Result<Option<String>> {
     if ctx.world.try_get::<Player>(ctx.sender).is_some() {
         // Go through the player's inventory and set all the slots to no items.
         // Also, keep track of how many items we delete.
@@ -408,7 +411,7 @@ pub fn clear_1(ctx: &mut CommandCtx) -> anyhow::Result<()> {
 }
 
 #[command(usage = "clear <targets>")]
-pub fn clear_2(ctx: &mut CommandCtx, targets: EntitySelector) -> anyhow::Result<()> {
+pub fn clear_2(ctx: &mut CommandCtx, targets: EntitySelector) -> anyhow::Result<Option<String>> {
     let mut players = true;
     for entity in &targets.entities {
         players &= ctx.world.try_get::<Player>(*entity).is_some();
@@ -442,7 +445,7 @@ pub fn clear_3(
     ctx: &mut CommandCtx,
     targets: EntitySelector,
     item: ItemArgument,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<String>> {
     let mut players = true;
     for entity in &targets.entities {
         players &= ctx.world.try_get::<Player>(*entity).is_some();
@@ -477,7 +480,7 @@ pub fn clear_4(
     targets: EntitySelector,
     item: ItemArgument,
     maxcount: PositiveI32Argument,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<String>> {
     let mut players = true;
     for entity in &targets.entities {
         players &= ctx.world.try_get::<Player>(*entity).is_some();
@@ -566,7 +569,7 @@ fn clear_items(
 }
 
 #[command(usage = "seed")]
-pub fn seed(ctx: &mut CommandCtx) -> anyhow::Result<()> {
+pub fn seed(ctx: &mut CommandCtx) -> anyhow::Result<Option<String>> {
     if let Some(mut message_receiver) = ctx.world.try_get_mut::<MessageReceiver>(ctx.sender) {
         message_receiver.send(
             Text::from("Seed: [")
@@ -594,12 +597,15 @@ pub fn ban_withreason(
     ctx: &mut CommandCtx,
     targets: EntitySelector,
     reason: TextArgument,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<String>> {
     ban_players(ctx, targets, reason.0, false)
 }
 
 #[command(usage = "ban <targets>")]
-pub fn ban_noreason(ctx: &mut CommandCtx, targets: EntitySelector) -> anyhow::Result<()> {
+pub fn ban_noreason(
+    ctx: &mut CommandCtx,
+    targets: EntitySelector,
+) -> anyhow::Result<Option<String>> {
     ban_players(ctx, targets, "Banned by an operator.".to_owned(), false)
 }
 
@@ -608,12 +614,15 @@ pub fn banip_withreason(
     ctx: &mut CommandCtx,
     targets: EntitySelector,
     reason: TextArgument,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<String>> {
     ban_players(ctx, targets, reason.0, true)
 }
 
 #[command(usage = "ban-ip <targets>")]
-pub fn banip_noreason(ctx: &mut CommandCtx, targets: EntitySelector) -> anyhow::Result<()> {
+pub fn banip_noreason(
+    ctx: &mut CommandCtx,
+    targets: EntitySelector,
+) -> anyhow::Result<Option<String>> {
     ban_players(ctx, targets, "Banned by an operator.".to_owned(), true)
 }
 
@@ -628,12 +637,12 @@ pub fn banip_withreason_ip(
     ctx: &mut CommandCtx,
     ip: String,
     reason: TextArgument,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<String>> {
     ban_ip(ctx, ip, reason.0)
 }
 
 #[command(usage = "ban-ip <ip>")]
-pub fn banip_noreason_ip(ctx: &mut CommandCtx, ip: String) -> anyhow::Result<()> {
+pub fn banip_noreason_ip(ctx: &mut CommandCtx, ip: String) -> anyhow::Result<Option<String>> {
     ban_ip(ctx, ip, "IP Banned by an operator.".to_string())
 }
 
@@ -752,7 +761,7 @@ pub enum PardonError {
 }
 
 #[command(usage = "pardon <name>")]
-pub fn pardon(ctx: &mut CommandCtx, name: TextArgument) -> anyhow::Result<()> {
+pub fn pardon(ctx: &mut CommandCtx, name: TextArgument) -> anyhow::Result<Option<String>> {
     // Get UUID from name
     let online_mode = ctx.game.shared.config.server.online_mode;
     let uuid = if online_mode {
@@ -795,7 +804,7 @@ pub enum PardonIpError {
 }
 
 #[command(usage = "pardon-ip <ip>")]
-pub fn pardonip(ctx: &mut CommandCtx, ip: String) -> anyhow::Result<()> {
+pub fn pardonip(ctx: &mut CommandCtx, ip: String) -> anyhow::Result<Option<String>> {
     // Try to parse ip
     let addr = IpAddr::from_str(&ip).map_err(|_| PardonIpError::NotIp)?;
 

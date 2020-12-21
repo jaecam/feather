@@ -7,11 +7,16 @@
 mod arguments;
 mod impls;
 
+use crate::NodeTree::NormalNode;
 use feather_core::text::{Text, TextComponentBuilder};
 use feather_server_types::{Game, MessageReceiver};
 use fecs::{Entity, World};
 use impls::*;
-use lieutenant::CommandDispatcher;
+use itertools::Itertools;
+use lieutenant::dispatcher::Node;
+use lieutenant::{dispatcher::NodeKey, Argument, CommandDispatcher, Context};
+use smallvec::SmallVec;
+use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
@@ -132,6 +137,14 @@ impl CommandState {
                 pardonip,
         }
 
+        let msg: String = NodeTree::RootNode(&dispatcher, &dispatcher.children)
+            .into_iter()
+            .map(|(name, depth)| line(&name, depth))
+            .intersperse("\n".to_string())
+            .collect();
+
+        println!("{}", msg);
+
         Self {
             dispatcher: Arc::new(dispatcher),
         }
@@ -167,4 +180,64 @@ impl CommandState {
             }
         }
     }
+}
+
+enum NodeTree<'a, C: Context> {
+    NormalNode(&'a CommandDispatcher<C>, &'a Node<C>),
+    RootNode(&'a CommandDispatcher<C>, &'a SmallVec<[NodeKey; 4]>),
+}
+
+impl<'a, C: Context> NodeTree<'a, C> {
+    fn name(&self) -> Cow<'static, str> {
+        match self {
+            NodeTree::NormalNode(.., node) => represent_argument(&node.argument),
+            NodeTree::RootNode(..) => Cow::Borrowed("CommandDispatcher"),
+        }
+    }
+}
+
+impl<'a, C: Context> IntoIterator for NodeTree<'a, C> {
+    type Item = (Cow<'a, str>, usize);
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        fn append<'a, C: Context>(
+            tree: NodeTree<'a, C>,
+            v: &mut Vec<(Cow<'a, str>, usize)>,
+            depth: usize,
+        ) {
+            v.extend(std::iter::once((tree.name(), depth)));
+            let (dispatcher, children) = match tree {
+                NodeTree::NormalNode(dispatcher, node) => (dispatcher, &node.children),
+                NodeTree::RootNode(dispatcher, children) => (dispatcher, children),
+            };
+
+            for child in children {
+                if let Some(n) = dispatcher.nodes.get(child.0) {
+                    append(NormalNode(dispatcher, n), v, depth + 1);
+                }
+            }
+        }
+
+        let mut result = vec![];
+        append(self, &mut result, 0);
+        result.into_iter()
+    }
+}
+
+fn represent_argument<C: Context>(arg: &Argument<C>) -> Cow<'static, str> {
+    match arg {
+        Argument::Literal { values } => values.iter().join("|").into(),
+        Argument::Parser { name, .. } => name.clone(),
+    }
+}
+
+fn line(arg: &str, depth: usize) -> String {
+    format!(
+        "{}{}{}{}",
+        if depth > 0 { "|" } else { "" },
+        "-".repeat(depth),
+        if depth > 0 { " " } else { "" },
+        arg
+    )
 }

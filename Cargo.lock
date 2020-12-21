@@ -1045,10 +1045,14 @@ dependencies = [
  "feather-server-types",
  "feather-server-util",
  "fecs",
+ "itertools 0.9.0",
  "lieutenant",
+ "log",
  "rand",
  "smallvec",
  "thiserror",
+ "tokio",
+ "uuid",
  "vek",
 ]
 
@@ -1110,6 +1114,7 @@ dependencies = [
  "derivative 2.1.1",
  "feather-core",
  "feather-server-types",
+ "feather-server-util",
  "fecs",
  "flume",
  "futures",
@@ -1237,10 +1242,14 @@ dependencies = [
  "fecs",
  "inventory",
  "itertools 0.9.0",
+ "md5 0.7.0",
  "nalgebra-glm",
  "rand",
  "rand_distr",
+ "reqwest",
+ "serde",
  "smallvec",
+ "uuid",
 ]
 
 [[package]]
@@ -1642,7 +1651,8 @@ dependencies = [
 [[package]]
 name = "hematite-nbt"
 version = "0.4.1"
-source = "git+https://github.com/PistonDevelopers/hematite_nbt?rev=41124ff#41124ff0b8b4394bf0c51a0fd92b72c594a45309"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "98b407a33bb1715a4cf0276edfe8df52352c55b2a3703c5079adedf398b92932"
 dependencies = [
  "byteorder",
  "cesu8",
@@ -1653,8 +1663,7 @@ dependencies = [
 [[package]]
 name = "hematite-nbt"
 version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98b407a33bb1715a4cf0276edfe8df52352c55b2a3703c5079adedf398b92932"
+source = "git+https://github.com/PistonDevelopers/hematite_nbt?rev=41124ff#41124ff0b8b4394bf0c51a0fd92b72c594a45309"
 dependencies = [
  "byteorder",
  "cesu8",
@@ -1942,7 +1951,7 @@ checksum = "c7d73b3f436185384286bd8098d17ec07c9a7d2388a6599f824d8502b529702a"
 [[package]]
 name = "lieutenant"
 version = "0.2.0"
-source = "git+https://github.com/feather-rs/lieutenant#c8f7a3fb02fe852dcd91de5d711e993610dda29a"
+source = "git+https://github.com/jaecam/lieutenant?branch=test#4af5a3ffb3be1880b135fe3a64abd48ae9085aba"
 dependencies = [
  "derivative 2.1.1",
  "lieutenant-macros",
@@ -1953,7 +1962,7 @@ dependencies = [
 [[package]]
 name = "lieutenant-macros"
 version = "0.1.0"
-source = "git+https://github.com/feather-rs/lieutenant#c8f7a3fb02fe852dcd91de5d711e993610dda29a"
+source = "git+https://github.com/jaecam/lieutenant?branch=test#4af5a3ffb3be1880b135fe3a64abd48ae9085aba"
 dependencies = [
  "darling",
  "proc-macro-error",
@@ -2824,6 +2833,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "serde",
+ "serde_json",
  "serde_urlencoded",
  "tokio",
  "tokio-tls",
